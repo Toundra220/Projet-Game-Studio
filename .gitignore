@@ -1,0 +1,43 @@
+# ============================================================
+# Secrets et configuration personnelle : ne JAMAIS publier
+# ============================================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+# Cookie de session Roblox, clés Open Cloud, jetons divers
+*ROBLOSECURITY*
+cookies.txt
+*.token
+api-key*.txt
+
+# ============================================================
+# Fichiers Roblox générés (le code source est dans src/)
+# ============================================================
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+build/
+sourcemap.json
+
+# ============================================================
+# Éditeur et système (configuration personnelle)
+# ============================================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Fichiers lourds : les vidéos restent sur le Drive de preuves
+# ============================================================
+*.mp4
+*.mov
+*.mkv
+*.psd
+*.log
