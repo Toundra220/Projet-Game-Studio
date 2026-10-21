@@ -11,3 +11,9 @@ local function saluer(nom: string): string
 end
 
 print(saluer("Studio"))
+
+local function additionner(a, b): number
+	return (a + b) 
+end 
+
+print(additionner(1, 2))
