@@ -6,6 +6,7 @@ Une ligne à la fin de chaque session de travail.
 |---|---|---|---|
 | 2026-10-15 | 1h30 | Création du dépôt GitHub | Idées mises à plat pour le jeu d'horreur
 | 2026-10-21 | 40 | comprehension luau | comparaison des différent jeux existants
+| 2026-10-23 | 2h | comprehension mecanique jeu horreur | document veille numérique fait et conception du jeu 
 
 
 
