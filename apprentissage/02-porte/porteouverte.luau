@@ -1,6 +1,6 @@
 --[[
 	Rôle    : exercice 2, variables, fonctions et print
-	Origine : ÉCRIT  
+	Origine : ÉCRIT AVEC L'AIDE DE CLAUDE
 	Auteur  : Romain Lesur
 	Date    : 2026-10-29
 	Notions : Connection à Studio, interration, comprehension de l'environnement
