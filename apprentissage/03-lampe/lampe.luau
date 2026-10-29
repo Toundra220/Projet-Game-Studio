@@ -3,7 +3,7 @@
 	Origine : ÉCRIT par moi
 	Auteur  : Romain Lesur
 	Date    : 2026-10-29
-	Notions : Connection à Studio, integration, comprehension de l'environnement
+	Notions : PointLight, Enabled, while, task.wait
 ]]
 
 

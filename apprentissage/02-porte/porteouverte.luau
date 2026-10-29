@@ -3,7 +3,7 @@
 	Origine : ÉCRIT par moi, à partir d’un squelette de Claude
 	Auteur  : Romain Lesur
 	Date    : 2026-10-29
-	Notions : Connection à Studio, integration, comprehension de l'environnement
+	Notions : Touched, Transparency, CanCollide, task.wait
 ]]
 
 
