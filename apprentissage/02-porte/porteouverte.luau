@@ -1,9 +1,9 @@
 --[[
 	Rôle    : exercice 2, variables, fonctions et print
-	Origine : ÉCRIT AVEC L'AIDE DE CLAUDE
+	Origine : ÉCRIT par moi, à partir d’un squelette de Claude
 	Auteur  : Romain Lesur
 	Date    : 2026-10-29
-	Notions : Connection à Studio, interration, comprehension de l'environnement
+	Notions : Connection à Studio, integration, comprehension de l'environnement
 ]]
 
 

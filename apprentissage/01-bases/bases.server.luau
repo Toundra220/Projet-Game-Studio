@@ -1,6 +1,6 @@
 --[[
 	Rôle    : exercice 1, variables, fonctions et print
-	Origine : ÉCRIT  (remplacer par ADAPTÉ de <source> ou RÉUTILISÉ de <source> si besoin)
+	Origine : ÉCRIT par moi, erreurs corrigées avec Claude
 	Auteur  : Romain Lesur
 	Date    : 2026-10-
 	Notions : variables locales, fonctions, conditions
