@@ -2,7 +2,7 @@
 	Rôle    : exercice 1, variables, fonctions et print
 	Origine : ÉCRIT par moi, erreurs corrigées avec Claude
 	Auteur  : Romain Lesur
-	Date    : 2026-10-
+	Date    : 2026-10-21
 	Notions : variables locales, fonctions, conditions
 ]]
 
