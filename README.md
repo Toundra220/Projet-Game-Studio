@@ -10,7 +10,7 @@ Je crée et publie plusieurs jeux Roblox, je les fais connaître sur TikTok et I
 | Groupe Roblox du studio | à compléter |
 | TikTok | à compléter |
 | Instagram | à compléter |
-| Tableau Kanban | à compléter |
+| Tableau Kanban | https://github.com/users/Toundra220/projects/3 |
 
 ## État d'avancement
 | Mois | Objectif | État |
