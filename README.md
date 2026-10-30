@@ -7,7 +7,7 @@ Je crée et publie plusieurs jeux Roblox, je les fais connaître sur TikTok et I
 | Quoi | Lien |
 |---|---|
 | Jeu 1 (horreur) | à venir (fin novembre 2026) |
-| Groupe Roblox du studio | à compléter |
+| Groupe Roblox du studio | horor_mommy |
 | TikTok | à compléter |
 | Instagram | à compléter |
 | Tableau Kanban | https://github.com/users/Toundra220/projects/3 |
