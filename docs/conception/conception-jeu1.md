@@ -1,6 +1,6 @@
 # Conception du jeu 1 : jeu d'horreur dans un manoir
 
-Auteur : Romain Lesur. Version 0.5 du 23/10/2026 (brouillon, à compléter).
+Auteur : Romain Lesur. Version 0.6 du 28/10/2026 (brouillon, à compléter).
 
 ## 1. Pitch
 Le joueur doit nettoyer un manoir le plus vite possible pour terminer la partie. Un monstre rôde dans le manoir : il faut l'esquiver tout en finissant les tâches de ménage.
@@ -31,36 +31,33 @@ Nombre de tâches pour finir : à décider (idée : 8 à 12, pour une partie de 
 - **Signaux au joueur :** son d'approche audible de loin, son différent quand il repère le joueur, yeux rouges (idées issues de la veille).
 - **Quand il attrape le joueur :** le joueur perd une vie et reprend sa progression. À 0 vie, la partie recommence depuis le début.
 
-## 5. La map : plan du manoir (à confirmer)
-Le manoir a deux niveaux. Au rez-de-chaussée, un grand hall central avec l'entrée, qui dessert les pièces à gauche et à droite.
+## 5. La map : plan du manoir (dessiné le 30/10/2026)
+Le plan dessiné à la main est dans `docs/conception/` (photo). Le manoir a deux niveaux.
 
-**Rez-de-chaussée**
-- **Hall central (entrée) :** grande allée au milieu, point de départ du joueur.
-- **Côté gauche :** une grande salle à manger avec une longue table ovale, puis une salle de vie avec télévision.
-- **Côté droit :** une salle de bain, une salle de stockage (idée : l'aspirateur s'y trouve) et des toilettes.
+**Rez-de-chaussée** : un grand couloir central relie toutes les pièces.
+- Rangée du haut : salle de vie, cuisine, stockage, escalier, garage.
+- Rangée du bas : salle à manger, entrée (au milieu, en bas), WC, salle de bains.
 
-**Étage**
-- 3 chambres, une autre salle de bain et d'autres toilettes. L'escalier est au milieu, au fond du hall.
+**Étage** : escalier en haut au centre.
+- 2 chambres, 2 salles de jeux, une salle de bain avec WC, une salle de stockage.
 
 ```
-        ÉTAGE
-  [Chambre][Chambre][Chambre]   [Salle de bain][WC]
-  --------------- couloir ---------------
-
         REZ-DE-CHAUSSÉE
-  [Salle à manger]  |  HALL  |  [Salle de bain]
-  [table ovale   ]  |  (entrée) | [Stockage]
-  [Salle de vie  ]  |        |  [Toilettes]
-  [télé          ]  |        |
+ [Salle de vie][Cuisine][Stockage][Escalier][   Garage   ]
+ [            C O U L O I R                              ]
+ [Salle à manger]  [ENTRÉE]            [WC][Salle de bains]
+
+        ÉTAGE
+ [Chambre][ Escalier ][Salle de jeux]
+ [Salle de bain + WC][Salle stockage][Chambre][Salle de jeu]
 ```
 
-- **Nombre de pièces :** environ 10 à 12 au total (à ajuster pour rester faisable en novembre).
-- **Schéma dessiné :** à ajouter dans `docs/conception/` (photo d'un dessin à main levée).
+- **Nombre de pièces :** 9 au rez-de-chaussée, 8 à l'étage (à simplifier pour novembre : garder les pièces utiles aux tâches, les autres peuvent rester fermées).
 - **Ambiance :** lumière faible, ombres, sons de vent et de craquements, meubles simples (peu de détails, comme Monochrome).
-- **Escalier :** au milieu, au fond du hall.
-- **Départ du joueur :** au rez-de-chaussée (à confirmer : dans le hall ?).
-- **Départ du monstre :** il apparaît dans une des chambres de l'étage et commence à se déplacer 7 secondes après le début de la partie. Ça laisse au joueur un petit temps pour comprendre et commencer sa première tâche.
-- **Question ouverte :** où est la sortie finale (idée : la porte d'entrée du hall).
+- **Départ du joueur :** à l'entrée, au rez-de-chaussée.
+- **Départ du monstre :** il apparaît dans une chambre de l'étage et commence à se déplacer 7 secondes après le début de la partie.
+- **Sortie finale (décidé) :** la porte d'entrée, en bas du plan. Une fois toutes les tâches finies, le joueur doit retraverser le couloir pour sortir, avec le monstre qui peut arriver.
+- **Aspirateur :** dans une pièce de stockage (rez-de-chaussée ou étage, à décider).
 
 ## 6. Ce que je reprends de ma veille
 - Monochrome : map courte avec peu de détails, un seul danger, un objectif clair.
