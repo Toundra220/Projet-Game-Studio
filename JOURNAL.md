@@ -12,6 +12,6 @@ Une ligne à la fin de chaque session de travail.
 | 2026-10-29 | 1h | Exercice 3 (lampe qui clignote) | `apprentissage/03-lampe/`, `preuves/2026-10/preuvelampe.png` |
 | 2026-10-30 | 20 min | Création du Kanban (GitHub Projects) et lien dans le README | `preuves/2026-10/kanban.png` |
 | 2026-10-30 | 1h30 | Dessin du plan du manoir (rez-de-chaussée et étage) | `docs/conception/mapjeu1.jpeg` |
-
+| 2026-11-11 | 2h30 | Base du manoir implémenté dans Studio, monstrev1 généré en 3d et présent dans studio |
 
 
