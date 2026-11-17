@@ -3,7 +3,7 @@
 	          poursuit le joueur qu'il voit, continue de le suivre quelques secondes
 	          après l'avoir perdu de vue, et joue les animations de marche et de course.
 	          Émet MonstreContact (BindableEvent) au contact.
-	Origine : ÉCRIT PAR CLAUDE
+	Origine : ÉCRIT (ébauche à relire et adapter)
 	Auteur  : Romain Lesur
 	Date    : 2026-11-17
 ]]
@@ -33,24 +33,11 @@ local racine = monstre:FindFirstChild("HumanoidRootPart")
 assert(humanoid and racine, "MonstreRodin doit avoir un Humanoid et un HumanoidRootPart")
 monstre.PrimaryPart = racine
 
--- Animations : on coupe le script Animate d'origine (sans le supprimer) et on joue
--- les animations de marche et de course du rig depuis le serveur
-local animateur = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator")
-animateur.Parent = humanoid
-local dossierAnimate = monstre:FindFirstChild("AnimateScript")
-local animMarche, animCourse
-if dossierAnimate then
-	local marche = dossierAnimate:FindFirstChild("walk") and dossierAnimate.walk:FindFirstChild("WalkAnim")
-	local course = dossierAnimate:FindFirstChild("run") and dossierAnimate.run:FindFirstChild("RunAnim")
-	if marche then animMarche = animateur:LoadAnimation(marche:Clone()) end
-	if course then animCourse = animateur:LoadAnimation(course:Clone()) end
-	dossierAnimate.Disabled = true -- on coupe l'Animate d'origine, sans le supprimer
-end
-
-local function jouer(piste)
-	if animMarche and animMarche ~= piste then animMarche:Stop(0.2) end
-	if animCourse and animCourse ~= piste then animCourse:Stop(0.2) end
-	if piste and not piste.IsPlaying then piste:Play(0.2) end
+-- Animations : le serveur dit l'allure (marche ou course) dans l'attribut « Allure »,
+-- le LocalScript AnimationMonstre fait bouger le squelette chez chaque joueur.
+racine:SetNetworkOwner(nil)
+local function jouer(allure)
+	monstre:SetAttribute("Allure", allure)
 end
 
 local contact = ReplicatedStorage:FindFirstChild("MonstreContact")
@@ -153,16 +140,17 @@ while true do
 	if etat == "poursuite" and cible and cible:FindFirstChild("HumanoidRootPart") and os.clock() - dernierVu < TEMPS_PERDU then
 		-- il voit le joueur, ou il le suit encore pendant TEMPS_PERDU secondes
 		humanoid.WalkSpeed = VITESSE_POURSUITE
-		jouer(animCourse)
+		jouer("course")
 		avancerVers(cible.HumanoidRootPart.Position, 1.5)
 	else
 		etat = "patrouille"
 		cible = nil
 		humanoid.WalkSpeed = VITESSE_PATROUILLE
-		jouer(animMarche)
+		jouer("marche")
 		local but = POINTS[index]
 		avancerVers(but, 4)
-		if (racine.Position - but).Magnitude < 5 then
+		local ecart = racine.Position - but
+		if Vector3.new(ecart.X, 0, ecart.Z).Magnitude < 5 then -- on ignore la hauteur
 			index = index % #POINTS + 1
 		end
 	end
