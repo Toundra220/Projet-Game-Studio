@@ -1,7 +1,8 @@
 --[[
 	Rôle    : IA du monstre du jeu 1 (horreur). Patrouille entre des points du couloir,
-	          poursuit le joueur qu'il voit (ligne de vue libre), revient en patrouille
-	          quand il le perd. Émet MonstreContact (BindableEvent) au contact.
+	          poursuit le joueur qu'il voit, continue de le suivre quelques secondes
+	          après l'avoir perdu de vue, et joue les animations de marche et de course.
+	          Émet MonstreContact (BindableEvent) au contact.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
 	Date    : 2026-11-17
@@ -12,11 +13,11 @@ local PathfindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Réglages
-local PORTEE_VUE = 35            -- distance à laquelle le monstre voit le joueur (studs)
+local PORTEE_VUE = 50            -- distance à laquelle le monstre voit le joueur (studs)
 local PORTEE_CONTACT = 4         -- distance de contact (studs)
 local VITESSE_PATROUILLE = 10
-local VITESSE_POURSUITE = 18
-local TEMPS_PERDU = 3            -- secondes sans voir le joueur avant de revenir en patrouille
+local VITESSE_POURSUITE = 17
+local TEMPS_PERDU = 8            -- secondes qu'il continue de suivre le joueur après l'avoir perdu de vue
 local DELAI_CONTACT = 2          -- secondes entre deux contacts avec le même joueur
 
 -- Points de patrouille (couloir du rez-de-chaussée)
@@ -31,6 +32,26 @@ local humanoid = monstre:FindFirstChildOfClass("Humanoid")
 local racine = monstre:FindFirstChild("HumanoidRootPart")
 assert(humanoid and racine, "MonstreRodin doit avoir un Humanoid et un HumanoidRootPart")
 monstre.PrimaryPart = racine
+
+-- Animations : on coupe le script Animate d'origine (sans le supprimer) et on joue
+-- les animations de marche et de course du rig depuis le serveur
+local animateur = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator")
+animateur.Parent = humanoid
+local dossierAnimate = monstre:FindFirstChild("AnimateScript")
+local animMarche, animCourse
+if dossierAnimate then
+	local marche = dossierAnimate:FindFirstChild("walk") and dossierAnimate.walk:FindFirstChild("WalkAnim")
+	local course = dossierAnimate:FindFirstChild("run") and dossierAnimate.run:FindFirstChild("RunAnim")
+	if marche then animMarche = animateur:LoadAnimation(marche:Clone()) end
+	if course then animCourse = animateur:LoadAnimation(course:Clone()) end
+	dossierAnimate.Disabled = true -- on coupe l'Animate d'origine, sans le supprimer
+end
+
+local function jouer(piste)
+	if animMarche and animMarche ~= piste then animMarche:Stop(0.2) end
+	if animCourse and animCourse ~= piste then animCourse:Stop(0.2) end
+	if piste and not piste.IsPlaying then piste:Play(0.2) end
+end
 
 local contact = ReplicatedStorage:FindFirstChild("MonstreContact")
 if not contact then
@@ -115,7 +136,7 @@ task.spawn(function()
 	end
 end)
 
--- Boucle principale : patrouille, poursuite, perte du joueur
+-- Boucle principale : patrouille, poursuite, suivi après perte de vue
 local etat = "patrouille"
 local index = 1
 local dernierVu = 0
@@ -127,15 +148,18 @@ while true do
 		etat = "poursuite"
 		cible = vu
 		dernierVu = os.clock()
+	end
+
+	if etat == "poursuite" and cible and cible:FindFirstChild("HumanoidRootPart") and os.clock() - dernierVu < TEMPS_PERDU then
+		-- il voit le joueur, ou il le suit encore pendant TEMPS_PERDU secondes
 		humanoid.WalkSpeed = VITESSE_POURSUITE
-		local r = vu:FindFirstChild("HumanoidRootPart")
-		if r then avancerVers(r.Position, 1.5) end
-	elseif etat == "poursuite" and cible and os.clock() - dernierVu < TEMPS_PERDU then
-		local r = cible:FindFirstChild("HumanoidRootPart")
-		if r then avancerVers(r.Position, 1.5) end
+		jouer(animCourse)
+		avancerVers(cible.HumanoidRootPart.Position, 1.5)
 	else
 		etat = "patrouille"
+		cible = nil
 		humanoid.WalkSpeed = VITESSE_PATROUILLE
+		jouer(animMarche)
 		local but = POINTS[index]
 		avancerVers(but, 4)
 		if (racine.Position - but).Magnitude < 5 then
