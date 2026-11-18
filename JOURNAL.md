@@ -15,4 +15,4 @@ Une ligne à la fin de chaque session de travail.
 | 2026-11-11 | 2h30 | Base du manoir implémenté dans Studio, monstrev1 généré en 3d et présent dans studio |
 | 2026-11-12 | 4h |Tentative de cration 3D du monstre (non inachevé produit payant ou trop chère en ressource)|
 | 2026-11-17 | 2h10 | IA + premières animations du monstre, nouveaux monstre.obj|
-
+| 2026-11-18 | 2h30 |Améliorations de l'ia et des animations du monstre + redimensions du manoir|
