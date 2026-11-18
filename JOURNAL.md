@@ -17,3 +17,4 @@ Une ligne à la fin de chaque session de travail.
 | 2026-11-17 | 2h10 | IA + premières animations du monstre, nouveaux monstre.obj|
 | 2026-11-18 | 2h30 |Améliorations de l'ia et des animations du monstre + redimensions du manoir|
 | 2026-11-18 | 30 min | Analyse de sécurité et ajout de 18 skills Claude Code dans .claude/skills/ | CLAUDE.md, CREDITS.md |
+| 2026-11-18 | 30min | modification de l'ia et de l'animations du monstre avec les nouveaux skills |
