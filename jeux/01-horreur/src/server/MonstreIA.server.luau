@@ -193,6 +193,11 @@ local function hauteurSol(pos)
 	return resultat and resultat.Position.Y or pos.Y - 4
 end
 
+-- Même position, ramenée au sol (un joueur qui saute est en l'air : on ne peut pas calculer de chemin vers lui)
+local function auSol(pos)
+	return Vector3.new(pos.X, hauteurSol(pos) + 0.5, pos.Z)
+end
+
 -- Dans quelle zone est une position : "rdc", "etage" ou "escalier" (sur les marches)
 local function zoneDe(pos)
 	if not SEUIL_ETAGE then
@@ -314,6 +319,14 @@ local function calculerChemin(but)
 	butActuel = but
 	suiviIndex = nil -- on recommence à surveiller le blocage sur ce nouveau chemin
 	return true
+end
+
+-- Secours quand le calcul échoue : un seul point, en ligne droite vers le but
+local function cheminDirect(but)
+	points = { { Position = but, Action = Enum.PathWaypointAction.Walk } }
+	indexPoint = 1
+	butActuel = but
+	suiviIndex = nil
 end
 
 local function viderChemin()
@@ -482,7 +495,7 @@ local function percevoir(dt, maintenant)
 	if meilleur then
 		memoire.cible = meilleur
 		memoire.voitCible = true
-		memoire.dernierePosition = infos[meilleur].position
+		memoire.dernierePosition = auSol(infos[meilleur].position)
 		memoire.derniereVitesse = infos[meilleur].vitesse
 	else
 		memoire.voitCible = false
@@ -502,7 +515,9 @@ task.spawn(function()
 			local r = perso and perso:FindFirstChild("HumanoidRootPart")
 			local h = perso and perso:FindFirstChildOfClass("Humanoid")
 			if etat ~= "attente" and r and h and h.Health > 0 and (ignorerJusqua[joueur] or 0) <= os.clock() then
-				if (r.Position - racine.Position).Magnitude < PORTEE_CONTACT then
+				local ecart = r.Position - racine.Position
+				-- distance à plat : sauter au dessus de lui ne permet pas d'esquiver le contact
+				if Vector3.new(ecart.X, 0, ecart.Z).Magnitude < PORTEE_CONTACT and math.abs(ecart.Y) < 8 then
 					local maintenant = os.clock()
 					if not dernierContact[joueur] or maintenant - dernierContact[joueur] > DELAI_CONTACT then
 						dernierContact[joueur] = maintenant
@@ -666,9 +681,9 @@ local function decider(maintenant)
 		if memoire.voitCible and r then
 			-- il le voit : il va vers sa position réelle
 			perduDepuis = nil
-			local cibleP = r.Position
+			local cibleP = memoire.dernierePosition or auSol(r.Position) -- au sol, même s'il saute
 			local ecart = cibleP - racine.Position
-			if ecart.Magnitude < DISTANCE_DIRECTE and zoneDe(cibleP) == zoneDe(racine.Position) then
+			if Vector3.new(ecart.X, 0, ecart.Z).Magnitude < DISTANCE_DIRECTE and zoneDe(cibleP) == zoneDe(racine.Position) then
 				viderChemin()
 				humanoid:MoveTo(cibleP) -- tout près : droit sur lui, sans calcul de chemin
 			else
@@ -676,7 +691,9 @@ local function decider(maintenant)
 				if maintenant - dernierCalcul > PERIODE_RECALCUL
 					and (cheminFini or not butActuel or (cibleP - butActuel).Magnitude > DEPLACEMENT_RECALCUL) then
 					dernierCalcul = maintenant
-					calculerChemin(cibleP)
+					if not calculerChemin(cibleP) and (cheminFini or zoneDe(cibleP) == zoneDe(racine.Position)) then
+						cheminDirect(cibleP) -- calcul raté : il fonce droit au lieu de s'arrêter
+					end
 				end
 				suivreChemin()
 			end
@@ -686,8 +703,8 @@ local function decider(maintenant)
 				perduDepuis = maintenant
 				local v = memoire.derniereVitesse
 				local estimee = memoire.dernierePosition + Vector3.new(v.X, 0, v.Z) * ANTICIPATION
-				if not calculerChemin(estimee) then
-					calculerChemin(memoire.dernierePosition)
+				if not calculerChemin(auSol(estimee)) and not calculerChemin(memoire.dernierePosition) then
+					cheminDirect(memoire.dernierePosition)
 				end
 			end
 			if (not suivreChemin() and dansEtat > 0.4) or maintenant - perduDepuis > TEMPS_POURSUITE_AVEUGLE then
