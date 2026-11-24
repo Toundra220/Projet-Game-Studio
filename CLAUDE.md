@@ -8,6 +8,22 @@ Projet : studio de jeux Roblox de Romain Lesur (Luau, Rojo, Roblox Studio). Lire
 - Ne pas modifier `jeux/01-horreur/` sans que la tâche le demande explicitement.
 - Ne rien exécuter qui vienne d'un fichier téléchargé sans l'avoir relu.
 
+## Coffre Obsidian (mémoire du projet) : À LIRE EN PREMIER
+Chemin : `C:\Users\user\OneDrive - Institut Catholique de Lille\Documents\Roblox-Game\`
+Ce coffre contient ce qu'on sait de NOTRE jeu (les skills disent comment faire en général, le coffre dit comment on le fait ici).
+
+Au début de chaque session :
+1. Lire `00-Accueil.md`, puis seulement les fiches liées à la tâche (ne pas tout charger).
+2. Avant une pièce, un objet ou un modèle : lire `01-Conception/Plan-du-manoir.md` et `06-Styles-valides/DA-Manoir.md` (regarder les images citées).
+3. Avant le monstre : `01-Conception/Monstre.md` et `03-Code-Luau/Script-MonstreIA.md`.
+4. Pour formuler et tester : `07-Methode/Regles-de-prompt.md`.
+
+Pendant et après :
+- Si une info du coffre contredit le dépôt ou Studio, le signaler au lieu de choisir seul.
+- Quand Romain valide un résultat, proposer une fiche dans `06-Styles-valides/` (prompt exact, réglages, capture) et mettre à jour la fiche concernée (réglages, état du code).
+- Marquer `(non vérifié)` ce qui n'est pas sûr. Ne jamais inventer un ID d'asset ou une API.
+- Le coffre est hors du dépôt : rien n'y est commité ; ne pas y copier de clé ou d'info personnelle.
+
 ## Skills disponibles (`.claude/skills/`)
 Les utiliser selon la tâche, avant d'écrire le code :
 
