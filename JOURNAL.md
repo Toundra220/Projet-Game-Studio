@@ -19,3 +19,4 @@ Une ligne à la fin de chaque session de travail.
 | 2026-11-18 | 30 min | Analyse de sécurité et ajout de 18 skills Claude Code dans .claude/skills/ | CLAUDE.md, CREDITS.md |
 | 2026-11-18 | 30min | modification de l'ia et de l'animations du monstre avec les nouveaux skills |
 | 2026-11-19 | 2h15 | Decoration du manoir + amelioration de l'ia |
+| 2026-11-24 | à compléter | Balai et aspirateur ramassables avec E (surbrillance seulement si visible, pas à travers les murs), balai gratuit pour tous, aspirateur payant en Robux (ID du game pass à renseigner), nettoyage avec va-et-vient du bras ; refonte de l IA du monstre (états, ouïe, vies) ; objets posés contre la malle dans Studio | `jeux/01-horreur/src/` (Outils, Monstre, Vies) |
