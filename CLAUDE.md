@@ -45,5 +45,6 @@ Les utiliser selon la tâche, avant d'écrire le code :
 | Physique qui saute ou tremble | `physics-tuning` |
 | Le jeu rame | `performance-optimization` |
 | Tester une idée vite | `prototype-fast` |
+| Structurer ou refactorer un système (SOLID) | `solid-luau` |
 
-Origine : dépôt `gamedev-skills/awesome-gamedev-agent-skills` (licence Apache 2.0, voir `.claude/skills/LICENSE` et `NOTICE`). Fichiers copiés tels quels, sans modification (commit `vendor:`).
+Origine : dépôt `gamedev-skills/awesome-gamedev-agent-skills` (licence Apache 2.0, voir `.claude/skills/LICENSE` et `NOTICE`). Fichiers copiés tels quels, sans modification (commit `vendor:`). Exception : `solid-luau` est écrit pour ce projet (pas couvert par ce `NOTICE`).
