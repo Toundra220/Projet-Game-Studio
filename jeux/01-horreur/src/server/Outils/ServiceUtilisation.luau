@@ -6,9 +6,10 @@
 	          reste légitime (outil en main, joueur vivant, cible valide, à portée, visible).
 	          Le travail lui-même (progression, bruit, effacement) est fait par une stratégie
 	          injectée (voir Utilisations/Nettoyage.luau).
+	          Pose sur l'outil « TypeCible » (Sol / Mur) pour que le client choisisse l'animation.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (TypeCible : 2026-11-25)
 ]]
 
 local Players = game:GetService("Players")
@@ -150,6 +151,9 @@ function ServiceUtilisation.demarrer(dependances: Dependances)
 		end
 
 		sessions[joueur] = session
+		-- Type de la cible pour l'animation sol / mur (avant EnUtilisation : le client lit les deux)
+		local typeTache = objet:GetAttribute(Reglages.ATTRIBUT_TYPE_TACHE)
+		outil:SetAttribute(Reglages.ATTRIBUT_TYPE_CIBLE, if typeTache == "Mur" then "Mur" else "Sol")
 		outil:SetAttribute(Reglages.ATTRIBUT_EN_UTILISATION, true)
 	end
 

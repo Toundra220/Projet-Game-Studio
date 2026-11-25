@@ -1,7 +1,8 @@
 --!strict
 --[[
-	Rôle    : fait bouger le bras du joueur local quand il utilise un outil (balayage du balai,
-	          va-et-vient de l'aspirateur).
+	Rôle    : fait bouger le haut du corps du joueur local quand il utilise un outil (coup de
+	          balai à deux mains, va-et-vient de l'aspirateur), en version sol ou mur selon
+	          l'attribut TypeCible posé par le serveur sur l'outil.
 	          - le serveur pose l'attribut « EnUtilisation » sur le Tool : il décide seul ;
 	          - ici on joue (ou on arrête) une animation générée à l'exécution à partir de
 	            FormesAnimation, sur l'Animator du personnage local.
@@ -12,7 +13,7 @@
 	          sur Transform. Une vraie animation est la seule voie qui fonctionne (testé).
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (corps entier, sol / mur : 2026-11-25)
 ]]
 
 local KeyframeSequenceProvider = game:GetService("KeyframeSequenceProvider")
@@ -60,9 +61,13 @@ local function construireSequence(forme: Forme): KeyframeSequence
 		image.Time = cle.temps
 		local racine = creerPose("HumanoidRootPart", image, 0, nil)
 		local bassin = creerPose("LowerTorso", racine, 0, nil)
-		local torse = creerPose("UpperTorso", bassin, 0, nil)
-		local bras = creerPose("RightUpperArm", torse, 1, cle.epaule)
-		creerPose("RightLowerArm", bras, 1, cle.coude)
+		-- Les jambes ne sont pas dans la séquence : la marche continue de les animer
+		local torse = creerPose("UpperTorso", bassin, 1, cle.taille)
+		local brasD = creerPose("RightUpperArm", torse, 1, cle.epauleD)
+		creerPose("RightLowerArm", brasD, 1, cle.coudeD)
+		local brasG = creerPose("LeftUpperArm", torse, 1, cle.epauleG)
+		creerPose("LeftLowerArm", brasG, 1, cle.coudeG)
+		creerPose("Head", torse, 1, cle.cou)
 		image.Parent = sequence
 	end
 	return sequence
@@ -158,7 +163,12 @@ local function mettreAJour()
 		arreterPiste()
 		return
 	end
-	local piste = obtenirPiste(definition.animation)
+	-- Tache murale (le serveur pose TypeCible sur l'outil) : version « Mur » si elle existe
+	local nomForme = definition.animation
+	if tool:GetAttribute(Reglages.ATTRIBUT_TYPE_CIBLE) == "Mur" and Formes[nomForme .. "Mur"] then
+		nomForme ..= "Mur"
+	end
+	local piste = obtenirPiste(nomForme)
 	if not piste then
 		return
 	end
@@ -182,6 +192,7 @@ local function suivreOutil(tool: Tool)
 	oublierOutil()
 	outilSuivi = tool
 	table.insert(connexionsOutil, tool:GetAttributeChangedSignal(Reglages.ATTRIBUT_EN_UTILISATION):Connect(mettreAJour))
+	table.insert(connexionsOutil, tool:GetAttributeChangedSignal(Reglages.ATTRIBUT_TYPE_CIBLE):Connect(mettreAJour))
 	mettreAJour()
 end
 

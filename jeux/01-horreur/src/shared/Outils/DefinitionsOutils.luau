@@ -27,6 +27,8 @@ local Reglages = {
 	ATTRIBUT_OUTIL_REQUIS = "OutilRequis",
 	ATTRIBUT_DUREE = "DureeNettoyage",
 	ATTRIBUT_FACTEUR_BRUIT = "FacteurBruit", -- posé par le serveur sur la tache : multiplie la portée du bruit de l'outil
+	ATTRIBUT_TYPE_TACHE = "TypeTache",       -- sur la tache : « Sol » ou « Mur »
+	ATTRIBUT_TYPE_CIBLE = "TypeCible",       -- posé par le serveur sur l'outil en utilisation : type de la cible (animation sol / mur)
 
 	-- Distances et angles
 	PORTEE_RAMASSAGE = 8,                -- studs
