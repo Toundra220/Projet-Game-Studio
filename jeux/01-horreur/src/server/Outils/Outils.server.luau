@@ -26,14 +26,15 @@ local remotes = Remotes.obtenir()
 -- (autre moyen de paiement, gratuit pour les tests...), on remplace seulement cette ligne.
 local paiement = PaiementRobux.nouveau()
 
+local evenements = EvenementsServeur.obtenir()
+
 ServiceRamassage.demarrer({
 	remotes = remotes,
+	outilDonne = evenements.outilDonne,
 	paiement = paiement,
 	fabrique = FabriqueOutil,
 	validation = ValidationServeur,
 })
-
-local evenements = EvenementsServeur.obtenir()
 
 -- Un nouvel usage d'outil = une stratégie dans Utilisations/ + une ligne ici (OCP).
 -- La clé est le champ « utilisation » de la définition de l'outil.

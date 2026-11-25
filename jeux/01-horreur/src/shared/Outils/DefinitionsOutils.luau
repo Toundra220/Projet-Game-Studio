@@ -5,7 +5,7 @@
 	          une entrée dans Definitions. Partagé entre client et serveur.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24 (modifié : 2026-11-25, bruit du balai, vitesseNettoyage, FacteurBruit)
+	Date    : 2026-11-24 (modifié : 2026-11-25, bruit du balai, vitesseNettoyage, FacteurBruit, OUTIL_DE_DEPART)
 ]]
 
 local Types = require(script.Parent:WaitForChild("Types"))
@@ -14,6 +14,9 @@ local Reglages = {
 	-- Tags
 	TAG_RAMASSABLE = "Ramassable",
 	TAG_NETTOYABLE = "Nettoyable",
+
+	-- Outil à prendre en premier : le client le montre à travers les murs tant qu'on ne l'a pas (RepereBalai)
+	OUTIL_DE_DEPART = "Balai",
 
 	-- Attributs
 	ATTRIBUT_OUTIL = "Outil",

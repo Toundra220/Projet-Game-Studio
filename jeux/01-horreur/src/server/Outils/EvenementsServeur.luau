@@ -5,6 +5,7 @@
 	          Signatures :
 	            NettoyageProgression:Fire(joueur: Player, cible: Instance, progression: number (0..1), idOutil: string)
 	            NettoyageTermine:Fire(joueur: Player, cible: Instance, idOutil: string)
+	            OutilDonne:Fire(joueur: Player, idOutil: string)   -- un outil vient d'être donné (ramassage ou achat) ; écouté par MonstreIA
 	            MonstreBruit:Fire(position: Vector3, portee: number, source: Player?)   -- écouté par MonstreIA
 	                (source : le joueur qui fait le bruit, facultatif ; sert à l'avertir quand le monstre vient)
 	          Le futur TaskManager écoutera NettoyageTermine (et NettoyageProgression pour une
@@ -12,7 +13,7 @@
 	          Taches/Taches.server écoute déjà NettoyageTermine (compteurs Total / Restantes).
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24 (modifié : 2026-11-25, 3e argument de MonstreBruit)
+	Date    : 2026-11-24 (modifié : 2026-11-25, 3e argument de MonstreBruit, OutilDonne)
 ]]
 
 local ServerStorage = game:GetService("ServerStorage")
@@ -21,11 +22,13 @@ export type EvenementsServeur = {
 	progression: BindableEvent,
 	termine: BindableEvent,
 	bruitMonstre: BindableEvent,
+	outilDonne: BindableEvent,
 }
 
 local NOM_PROGRESSION = "NettoyageProgression"
 local NOM_TERMINE = "NettoyageTermine"
 local NOM_BRUIT = "MonstreBruit"
+local NOM_OUTIL_DONNE = "OutilDonne"
 
 local EvenementsServeur = {}
 
@@ -51,6 +54,7 @@ function EvenementsServeur.obtenir(): EvenementsServeur
 		progression = trouverOuCreer(NOM_PROGRESSION),
 		termine = trouverOuCreer(NOM_TERMINE),
 		bruitMonstre = trouverOuCreer(NOM_BRUIT),
+		outilDonne = trouverOuCreer(NOM_OUTIL_DONNE),
 	}
 	cache = evenements
 	return evenements

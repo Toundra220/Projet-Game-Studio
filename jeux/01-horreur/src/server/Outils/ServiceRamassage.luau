@@ -7,7 +7,7 @@
 	          déjà possédés quand le joueur se reconnecte.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-25, événement OutilDonne)
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -30,6 +30,7 @@ local ATTENTE_BACKPACK = 10        -- secondes max pour attendre le Backpack à 
 -- Les dépendances sont injectées (DIP) : ce module ne choisit ni le paiement, ni la fabrique.
 type Dependances = {
 	remotes: RemotesModule.RemotesOutils,
+	outilDonne: BindableEvent, -- tiré (joueur, idOutil) quand un outil vient d'être donné ; écouté par MonstreIA
 	paiement: Types.Paiement,
 	fabrique: { creer: (definition: Types.DefinitionOutil, objetDecor: Instance?) -> Tool? },
 	validation: {
@@ -44,6 +45,7 @@ local ServiceRamassage = {}
 
 function ServiceRamassage.demarrer(dependances: Dependances)
 	local remotes = dependances.remotes
+	local outilDonne = dependances.outilDonne
 	local paiement = dependances.paiement
 	local fabrique = dependances.fabrique
 	local validation = dependances.validation
@@ -97,6 +99,7 @@ function ServiceRamassage.demarrer(dependances: Dependances)
 			-- pas encore de Backpack : StarterGear suffit, il sera copié dans le Backpack au spawn (non vérifié)
 			outil:Destroy()
 		end
+		outilDonne:Fire(joueur, definition.id)
 		return true
 	end
 
