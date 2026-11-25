@@ -4,24 +4,28 @@
 	          Vue  : distance, puis cône (portée réduite sur les bords), puis rayons vers le torse
 	                 et la tête (les pièces presque invisibles ne bloquent pas). Vigilance qui monte
 	                 plus vite quand le joueur est proche : il ne réagit pas instantanément.
-	          Ouïe : pas de course des joueurs + MonstreBruit (aspirateur...). Un bruit lointain
+	          Ouïe : seulement les bruits reçus par MonstreBruit (pas, actions et nettoyage, chacun
+	                 avec un stade : voir ReactionBruit). Les pas ne sont plus mesurés ici :
+	                 Server/Bruit calcule le niveau de chaque joueur et l'envoie. Un bruit lointain
 	                 est mal situé : il va vers une position estimée, pas vers la vraie.
+	                 Entre deux bruits en attente, le plus attirant l'emporte (stade, puis intensité).
 	          Pas d'omniscience : il ne lit la position d'un joueur que quand il le voit.
 	Origine : ÉCRIT PAR CLAUDE (extrait et complété de MonstreIA.server.luau)
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24 (modifié : 2026-11-25, bruits ramenés au sol, source du bruit)
+	Date    : 2026-11-24 (modifié : 2026-11-25, bruits ramenés au sol, source du bruit ; stades de bruit)
 ]]
 
 local Players = game:GetService("Players")
 
 local Perception = {}
 
--- ctx = { reglages, racine, tete (BasePart ou nil), terrain, exclusVue }
+-- ctx = { reglages, racine, tete (BasePart ou nil), terrain, exclusVue, reaction (ReactionBruit) }
 function Perception.nouveau(ctx)
 	local R = ctx.reglages
 	local racine: BasePart = ctx.racine
 	local tete: BasePart? = ctx.tete
 	local terrain = ctx.terrain
+	local reaction = ctx.reaction
 	local aleatoire = Random.new()
 
 	local paramsVue = RaycastParams.new()
@@ -38,7 +42,7 @@ function Perception.nouveau(ctx)
 		dernierePosition = nil,      -- là où il l'a vu en dernier (au sol)
 		derniereVitesse = Vector3.zero,
 		finPoursuite = -math.huge,   -- moment où il a perdu le joueur
-		bruit = nil,                 -- { brut, estime, intensite, instant, source } : dernier bruit pas encore traité (source : Player ou nil)
+		bruit = nil,                 -- { brut, estime, intensite, instant, source, stade } : dernier bruit pas encore traité (source : Player ou nil)
 		soupcon = 0,                 -- vigilance la plus haute parmi les joueurs pas encore repérés (0..1)
 		indice = nil,                -- endroit (au sol) où il a entrevu quelqu'un
 		indiceVu = false,            -- il entrevoit quelqu'un en ce moment
@@ -100,10 +104,11 @@ function Perception.nouveau(ctx)
 	end
 
 	-- Un bruit à « position », audible jusqu'à « portee ». Renvoie true s'il l'a entendu.
-	-- « source » (facultatif) : le joueur qui fait le bruit, pour pouvoir l'avertir (nettoyage).
+	-- « source » (facultatif) : le joueur qui fait le bruit, pour pouvoir l'avertir.
+	-- « stade » : 1 (marche) ... STADE_MAX (nettoyage), déjà validé par ReactionBruit.normaliser.
 	-- Le bruit est ramené au sol, comme le monstre : une tache au mur est en hauteur, mais c'est au
 	-- pied du mur qu'il va, et sa hauteur ne compte pas comme un étage de plus dans la distance.
-	function self.entendre(position: Vector3, portee: number, source: Player?): boolean
+	function self.entendre(position: Vector3, portee: number, source: Player?, stade: number): boolean
 		local sol = terrain.auSol(position)
 		local ecart = sol - terrain.auSol(racine.Position)
 		local distance = Vector3.new(ecart.X, ecart.Y * R.FACTEUR_ETAGE, ecart.Z).Magnitude
@@ -112,8 +117,9 @@ function Perception.nouveau(ctx)
 		end
 		local intensite = 1 - distance / portee
 		local enAttente = memoire.bruit
-		if enAttente and os.clock() - enAttente.instant < 1 and enAttente.intensite > intensite + 0.1 then
-			return false -- un bruit nettement plus fort attend déjà d'être traité
+		if enAttente and os.clock() - enAttente.instant < 1
+			and reaction.plusFort(enAttente.stade, enAttente.intensite, stade, intensite) then
+			return false -- un bruit plus attirant attend déjà d'être traité
 		end
 		-- de loin, il situe mal le bruit
 		local erreur = math.min(R.IMPRECISION_MAX, distance * R.IMPRECISION_OUIE) * aleatoire:NextNumber()
@@ -124,6 +130,7 @@ function Perception.nouveau(ctx)
 			intensite = intensite,
 			instant = os.clock(),
 			source = source,
+			stade = stade,
 		}
 		return true
 	end
@@ -132,7 +139,7 @@ function Perception.nouveau(ctx)
 	function self.prendreBruit()
 		local bruit = memoire.bruit
 		memoire.bruit = nil
-		if bruit and os.clock() - bruit.instant < 3 then
+		if bruit and os.clock() - bruit.instant < R.DUREE_VIE_BRUIT then
 			return bruit
 		end
 		return nil
@@ -201,13 +208,7 @@ function Perception.nouveau(ctx)
 					v = math.max(0, v - dt * R.OUBLI_VIGILANCE)
 				end
 				vigilance[joueur] = v
-
-				-- ouïe : des pas rapides font du bruit (marcher lentement est silencieux)
-				local vitesse = r.AssemblyLinearVelocity
-				if Vector3.new(vitesse.X, 0, vitesse.Z).Magnitude > R.SEUIL_VITESSE_BRUIT
-					and h.FloorMaterial ~= Enum.Material.Air then
-					self.entendre(r.Position, R.PORTEE_OUIE_PAS)
-				end
+				-- ouïe : les pas arrivent par MonstreBruit (Server/Bruit), plus rien à mesurer ici
 			end
 		end
 

@@ -6,7 +6,8 @@
 	          Lu une seule fois au démarrage du serveur.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24 (modifié : 2026-11-25, écoute des bruits de nettoyage, AGENT_HAUTEUR 16, SEUIL_VITESSE_BRUIT 22 pour le sprint, apparition au balai)
+	Date    : 2026-11-24 (modifié : 2026-11-25, écoute des bruits de nettoyage, AGENT_HAUTEUR 16, apparition au balai ;
+	          réaction par stade de bruit : le seuil de course est passé dans Shared/Bruit/ReglagesBruit)
 ]]
 
 local DEFAUTS = {
@@ -28,21 +29,49 @@ local DEFAUTS = {
 	TRANSPARENCE_TRAVERSEE = 0.95, -- une pièce au moins aussi transparente ne bloque pas la vue
 	HAUTEUR_YEUX = 2.5,            -- si le modèle n'a pas de tête : yeux à 2,5 studs au dessus de la racine
 
-	-- Ouïe
-	SEUIL_VITESSE_BRUIT = 22,      -- au dessus de cette vitesse, les pas du joueur font du bruit : la marche (16) est silencieuse, le sprint (32, Shared/Sprint/ReglagesSprint) est bruyant
-	PORTEE_OUIE_PAS = 35,          -- distance à laquelle il entend ces pas (donc : le sprint ; la marche n'en fait pas)
+	-- Ouïe : générale
 	FACTEUR_ETAGE = 2,             -- la distance verticale compte double (le plancher étouffe le bruit)
 	IMPRECISION_OUIE = 0.12,       -- de loin il situe mal le bruit : erreur jusqu'à 12 % de la distance...
 	IMPRECISION_MAX = 6,           -- ... sans dépasser 6 studs
 	PORTEE_BRUIT_MAX = 200,        -- portée max acceptée pour MonstreBruit
-	DUREE_ECOUTE_PRES = 0.6,       -- il entend un bruit tout près : il s'arrête 0,6 s (tête tournée vers lui) avant d'aller voir...
-	DUREE_ECOUTE_LOIN = 1.6,       -- ... et 1,6 s si le bruit est au bout de sa portée : le temps pour le joueur de réagir
 	ECART_NOUVEAU_BRUIT = 4,       -- un bruit à plus de 4 studs du précédent est un autre endroit : il change de but
 	DISTANCE_SUR_PLACE = 12,       -- à moins de 12 studs d'un bruit qu'il fouille déjà, un bruit au même endroit ne le fait plus se remettre à écouter
+	DUREE_VIE_BRUIT = 3,           -- un bruit entendu mais pas encore traité est oublié au bout de 3 s
+
+	-- Ouïe : réaction par stade de bruit (stades de Shared/Bruit/ReglagesBruit, calculés par Server/Bruit).
+	-- Plus le stade est haut : il l'entend de plus loin, écoute moins longtemps et va voir plus vite.
+	-- ECOUTE_PRES / ECOUTE_LOIN : secondes figé, tête tournée vers le bruit, selon qu'il est tout près
+	-- ou au bout de la portée. C'est le temps laissé au joueur (il voit la tête tourner et reçoit
+	-- « Ton bruit a été entendu »). Enquête : vitesse pour aller voir (joueur : marche 16, sprint 32).
+	-- Stade 1, marche : 12 studs, à peine plus que sa sensation de proximité (PORTEE_PROXIMITE 10).
+	--   On peut donc marcher dans son dos à plus de 12 studs, ou à l'étage (distance verticale x 2).
+	--   Écoute longue et enquête lente (12 < 16) : la marche prudente reste viable.
+	PORTEE_OUIE_STADE_1 = 12,
+	ECOUTE_PRES_STADE_1 = 1.2,
+	ECOUTE_LOIN_STADE_1 = 2.0,
+	VITESSE_ENQUETE_STADE_1 = 12,
+	-- Stade 2, ramasser un objet, retomber d'un saut : un bruit sec, moins portant qu'une course
+	PORTEE_OUIE_STADE_2 = 22,
+	ECOUTE_PRES_STADE_2 = 0.8,
+	ECOUTE_LOIN_STADE_2 = 1.5,
+	VITESSE_ENQUETE_STADE_2 = 14,
+	-- Stade 3, course : même portée qu'avant (35) pour garder l'équilibrage du sprint (ReglagesSprint)
+	PORTEE_OUIE_STADE_3 = 35,
+	ECOUTE_PRES_STADE_3 = 0.5,
+	ECOUTE_LOIN_STADE_3 = 1.1,
+	VITESSE_ENQUETE_STADE_3 = 16,
+	-- Stade 4, nettoyage : il réagit presque tout de suite et accourt. Il reste plus lent que le sprint
+	-- (32) et la poursuite n'a lieu que s'il VOIT le joueur : fuir dès l'avertissement suffit.
+	PORTEE_OUIE_STADE_4 = 40,      -- portée minimale d'un bruit de nettoyage...
+	MULTIPLICATEUR_NETTOYAGE = 1.4,-- ... ou portée de l'outil (Outils, x FacteurBruit de la tache) x 1,4 si c'est plus :
+	                               --     balai sol 25 -> 40, balai mur 32,5 -> 45,5, aspirateur sol 45 -> 63, mur 58,5 -> 81,9
+	ECOUTE_PRES_STADE_4 = 0.3,     -- avant : 0,6 à 1,6 s
+	ECOUTE_LOIN_STADE_4 = 0.5,
+	VITESSE_ENQUETE_STADE_4 = 19,  -- avant : 14
 
 	-- Vitesses (joueur : 16)
 	VITESSE_PATROUILLE = 10,
-	VITESSE_ENQUETE = 14,
+	VITESSE_ENQUETE = 14,          -- pour aller voir une silhouette entrevue (les bruits ont leur vitesse par stade, plus haut)
 	VITESSE_POURSUITE = 24,
 	VITESSE_RECHERCHE = 8,
 
