@@ -9,7 +9,7 @@
 	          Pas d'omniscience : il ne lit la position d'un joueur que quand il le voit.
 	Origine : ÉCRIT PAR CLAUDE (extrait et complété de MonstreIA.server.luau)
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-25, bruits ramenés au sol, source du bruit)
 ]]
 
 local Players = game:GetService("Players")
@@ -38,7 +38,7 @@ function Perception.nouveau(ctx)
 		dernierePosition = nil,      -- là où il l'a vu en dernier (au sol)
 		derniereVitesse = Vector3.zero,
 		finPoursuite = -math.huge,   -- moment où il a perdu le joueur
-		bruit = nil,                 -- { brut, estime, intensite, instant } : dernier bruit pas encore traité
+		bruit = nil,                 -- { brut, estime, intensite, instant, source } : dernier bruit pas encore traité (source : Player ou nil)
 		soupcon = 0,                 -- vigilance la plus haute parmi les joueurs pas encore repérés (0..1)
 		indice = nil,                -- endroit (au sol) où il a entrevu quelqu'un
 		indiceVu = false,            -- il entrevoit quelqu'un en ce moment
@@ -100,8 +100,12 @@ function Perception.nouveau(ctx)
 	end
 
 	-- Un bruit à « position », audible jusqu'à « portee ». Renvoie true s'il l'a entendu.
-	function self.entendre(position: Vector3, portee: number): boolean
-		local ecart = position - racine.Position
+	-- « source » (facultatif) : le joueur qui fait le bruit, pour pouvoir l'avertir (nettoyage).
+	-- Le bruit est ramené au sol, comme le monstre : une tache au mur est en hauteur, mais c'est au
+	-- pied du mur qu'il va, et sa hauteur ne compte pas comme un étage de plus dans la distance.
+	function self.entendre(position: Vector3, portee: number, source: Player?): boolean
+		local sol = terrain.auSol(position)
+		local ecart = sol - terrain.auSol(racine.Position)
 		local distance = Vector3.new(ecart.X, ecart.Y * R.FACTEUR_ETAGE, ecart.Z).Magnitude
 		if portee <= 0 or distance > portee then
 			return false
@@ -115,10 +119,11 @@ function Perception.nouveau(ctx)
 		local erreur = math.min(R.IMPRECISION_MAX, distance * R.IMPRECISION_OUIE) * aleatoire:NextNumber()
 		local angle = aleatoire:NextNumber() * 2 * math.pi
 		memoire.bruit = {
-			brut = position,
-			estime = position + Vector3.new(math.cos(angle), 0, math.sin(angle)) * erreur,
+			brut = sol,
+			estime = sol + Vector3.new(math.cos(angle), 0, math.sin(angle)) * erreur,
 			intensite = intensite,
 			instant = os.clock(),
+			source = source,
 		}
 		return true
 	end

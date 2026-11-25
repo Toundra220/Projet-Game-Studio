@@ -4,7 +4,11 @@
 	          patrouille: va de point en point (rez-de-chaussée et étage), évite les derniers visités
 	          soupcon   : il a entrevu quelqu'un : il s'arrête, fixe l'endroit, la tête penchée ;
 	                      si le joueur reste visible -> alerte, s'il se cache -> il va voir (enquete)
-	          enquete   : va vers un bruit (pas de course, aspirateur...) ou vers ce qu'il a entrevu
+	          ecoute    : il vient d'entendre un bruit : il s'arrête 0,6 à 1,6 s (plus le bruit est loin, plus
+	                      c'est long), la tête tournée vers lui (le client l'anime comme « soupcon »), puis
+	                      il va voir (enquete). Le joueur qui fait le bruit en nettoyant est averti (attribut
+	                      MonstreAttire sur son Player, affiché par Taches/AvertissementBruit).
+	          enquete   : va vers un bruit (pas de course, balai, aspirateur...) ou vers ce qu'il a entrevu
 	          alerte    : il vient de repérer un joueur, se fige et se tourne vers lui
 	                      (laisse au joueur une fraction de seconde pour réagir)
 	          poursuite : court vers le joueur tant qu'il le voit ; sinon vers sa position estimée,
@@ -14,12 +18,14 @@
 	          Sens : Monstre/Perception. Chemin : Monstre/Deplacement. Chiffres : Monstre/Reglages
 	          (modifiables par attributs sur Workspace.MonstreRodin, ex. DELAI_DEPART, DEBUG).
 	          Émet MonstreContact (BindableEvent, ReplicatedStorage) au contact : Vies.server retire une vie.
-	          Écoute MonstreBruit (BindableEvent, ServerStorage) : MonstreBruit:Fire(position, portee).
+	          Écoute MonstreBruit (BindableEvent, ServerStorage) : MonstreBruit:Fire(position, portee, joueur?).
+	          Tout nettoyage en émet un (Outils/Utilisations/Nettoyage) : le monstre vient voir les taches
+	          qu'on nettoie, avec l'imprécision de Perception.entendre. Le client ne peut pas en envoyer.
 	          Attributs lus par le client : Etat, Allure, CibleId (UserId poursuivi, 0 sinon),
 	          Regard (Vector3 que la tête fixe, absent sinon).
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-18 (refonte en modules : 2026-11-24)
+	Date    : 2026-11-18 (refonte en modules : 2026-11-24 ; écoute et bruits de nettoyage : 2026-11-25)
 ]]
 
 local Players = game:GetService("Players")
@@ -31,6 +37,10 @@ local Reglages = require(dossierModules:WaitForChild("Reglages"))
 local Terrain = require(dossierModules:WaitForChild("Terrain"))
 local Perception = require(dossierModules:WaitForChild("Perception"))
 local Deplacement = require(dossierModules:WaitForChild("Deplacement"))
+-- nom de l'attribut d'avertissement du joueur : partagé avec le client (Taches/AvertissementBruit)
+local ATTRIBUT_AVERTISSEMENT = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Taches"):WaitForChild("ReglagesTaches")
+).ATTRIBUT_AVERTISSEMENT
 
 local monstre = workspace:WaitForChild("MonstreRodin")
 local humanoid = monstre:FindFirstChildOfClass("Humanoid")
@@ -122,7 +132,7 @@ end
 
 local etat = nil -- défini par changerEtat
 
-evenementBruit.Event:Connect(function(position, portee)
+evenementBruit.Event:Connect(function(position, portee, source)
 	if typeof(position) ~= "Vector3" or not estFini(portee)
 		or not (estFini(position.X) and estFini(position.Y) and estFini(position.Z)) then
 		return
@@ -130,7 +140,14 @@ evenementBruit.Event:Connect(function(position, portee)
 	if etat == "attente" then
 		return
 	end
-	perception.entendre(position, math.clamp(portee, 0, R.PORTEE_BRUIT_MAX))
+	-- source : le joueur qui fait le bruit (facultatif). On ne fait confiance qu'à un vrai joueur présent.
+	if typeof(source) ~= "Instance" or not source:IsA("Player") or source.Parent ~= Players then
+		source = nil
+	end
+	local entendu = perception.entendre(position, math.clamp(portee, 0, R.PORTEE_BRUIT_MAX), source)
+	if R.DEBUG then
+		print(("[Monstre] %.2f  bruit (portée %.0f) : %s"):format(os.clock(), portee, entendu and "entendu" or "trop loin"))
+	end
 end)
 
 -- Attributs lus par le client : envoyés seulement quand ils changent
@@ -143,6 +160,23 @@ end
 local function racineDe(joueur)
 	local perso = joueur and joueur.Character
 	return perso and perso:FindFirstChild("HumanoidRootPart")
+end
+
+-- Avertissement du joueur dont le bruit attire le monstre (états ecoute et enquete) :
+-- un attribut booléen sur son Player, répliqué au client qui l'affiche (pas de RemoteEvent).
+-- Un seul joueur à la fois : celui du dernier bruit entendu.
+local joueurPrevenu = nil
+local function prevenir(joueur)
+	if joueur == joueurPrevenu then
+		return
+	end
+	if joueurPrevenu and joueurPrevenu.Parent then
+		joueurPrevenu:SetAttribute(ATTRIBUT_AVERTISSEMENT, nil)
+	end
+	joueurPrevenu = joueur
+	if joueur then
+		joueur:SetAttribute(ATTRIBUT_AVERTISSEMENT, true)
+	end
 end
 
 ---------------------------------------------------------------------------
@@ -182,6 +216,9 @@ end)
 Players.PlayerRemoving:Connect(function(joueur)
 	perception.oublier(joueur)
 	dernierContact[joueur] = nil
+	if joueur == joueurPrevenu then
+		joueurPrevenu = nil
+	end
 end)
 
 ---------------------------------------------------------------------------
@@ -189,10 +226,12 @@ end)
 ---------------------------------------------------------------------------
 
 -- calme : bruits et soupçons peuvent l'interrompre. chasse : il est sur un joueur.
+-- publie : nom d'état envoyé au client à la place du vrai (le client anime « soupcon » : figé, tête penchée).
 local ETATS = {
 	attente    = { vitesse = 0,                    allure = "repos" },
 	patrouille = { vitesse = R.VITESSE_PATROUILLE, allure = "marche", calme = true },
 	soupcon    = { vitesse = 0,                    allure = "repos" },
+	ecoute     = { vitesse = 0,                    allure = "repos", calme = true, publie = "soupcon" },
 	enquete    = { vitesse = R.VITESSE_ENQUETE,    allure = "marche", calme = true },
 	alerte     = { vitesse = 0,                    allure = "course", chasse = true },
 	poursuite  = { vitesse = R.VITESSE_POURSUITE,  allure = "course", chasse = true },
@@ -209,6 +248,8 @@ local butPatrouille, cheminPret = nil, false
 local visites = {}            -- derniers points de patrouille visités
 local loinDe = nil            -- après une prise : patrouiller loin de cette position
 local enquete = { estime = nil, brut = nil, essaiBrut = false }
+local ecoute = { estime = nil, brut = nil, source = nil, duree = 0 } -- bruit entendu, avant d'aller voir
+local dernierBruitSuivi = { brut = nil, instant = -math.huge } -- dernier endroit où il est allé voir (bruit ou silhouette)
 local finSoupcon = -math.huge
 local perduDepuis = nil       -- poursuite : moment où il a perdu le joueur de vue
 local piste = nil             -- poursuite : meilleure idée de là où est le joueur
@@ -235,12 +276,17 @@ local function changerEtat(nouveau)
 	etat = nouveau
 	debutEtat = os.clock()
 
+	-- le joueur n'est averti que tant que le monstre vient à cause de son bruit (ecoute, puis enquete)
+	if nouveau ~= "ecoute" and nouveau ~= "enquete" then
+		prevenir(nil)
+	end
+
 	local def = ETATS[nouveau]
 	humanoid.WalkSpeed = def.vitesse
 	definirAttribut("Allure", def.allure)
-	definirAttribut("Etat", nouveau)
+	definirAttribut("Etat", def.publie or nouveau)
 
-	if nouveau == "attente" or nouveau == "alerte" or nouveau == "soupcon" or nouveau == "attaque" then
+	if nouveau == "attente" or nouveau == "alerte" or nouveau == "soupcon" or nouveau == "ecoute" or nouveau == "attaque" then
 		deplacement.arreter()
 	elseif nouveau == "patrouille" then
 		butPatrouille = nil
@@ -252,11 +298,23 @@ local function changerEtat(nouveau)
 	end
 end
 
--- Va voir un endroit (bruit ou silhouette entrevue)
-local function commencerEnquete(estime, brut)
+-- Va voir un endroit (bruit ou silhouette entrevue). source : le joueur dont le bruit l'attire (ou nil)
+local function commencerEnquete(estime, brut, source)
 	changerEtat("enquete")
 	enquete.estime, enquete.brut, enquete.essaiBrut = estime, brut, false
+	dernierBruitSuivi.brut, dernierBruitSuivi.instant = brut, os.clock()
 	cheminPret = false
+	prevenir(source)
+end
+
+-- Vient d'entendre un bruit : il s'arrête un instant, la tête tournée vers lui, avant d'aller voir.
+-- Plus le bruit est proche, plus il réagit vite (comme pour sa vue : TEMPS_REACTION_PRES / LOIN).
+-- C'est le temps de réaction laissé au joueur : il voit sa tête tourner et reçoit l'avertissement.
+local function commencerEcoute(bruit)
+	changerEtat("ecoute")
+	ecoute.estime, ecoute.brut, ecoute.source = bruit.estime, bruit.brut, bruit.source
+	ecoute.duree = R.DUREE_ECOUTE_PRES + (R.DUREE_ECOUTE_LOIN - R.DUREE_ECOUTE_PRES) * (1 - bruit.intensite)
+	prevenir(bruit.source)
 end
 
 -- Recherche autour d'un endroit : regarder autour, puis fouiller les 2 points de patrouille
@@ -370,6 +428,15 @@ function MAJ.soupcon(maintenant, dansEtat)
 		else
 			changerEtat("patrouille")
 		end
+	end
+end
+
+function MAJ.ecoute(_maintenant, dansEtat)
+	-- figé, la tête tournée vers le bruit : le joueur voit qu'il a été entendu et peut s'arrêter ou fuir
+	deplacement.faireFace(ecoute.brut, 0.3)
+	regard = ecoute.brut + Vector3.new(0, 3, 0)
+	if dansEtat >= ecoute.duree then
+		commencerEnquete(ecoute.estime, ecoute.brut, ecoute.source)
 	end
 end
 
@@ -540,9 +607,31 @@ local function decider(maintenant)
 		-- 4. il entend un bruit
 		if def.calme then
 			local bruit = perception.prendreBruit()
-			if bruit and (etat ~= "enquete" or (bruit.brut - enquete.brut).Magnitude > 4) then
-				commencerEnquete(bruit.estime, bruit.brut)
-				return
+			if bruit then
+				if etat == "ecoute" then
+					-- il écoute encore : il retient le bruit le plus récent, le temps d'écoute ne repart pas
+					ecoute.estime, ecoute.brut, ecoute.source = bruit.estime, bruit.brut, bruit.source
+					prevenir(bruit.source)
+				elseif etat == "enquete" then
+					-- même endroit (le balai refait du bruit toutes les 1,2 s) : il continue vers son but ;
+					-- autre endroit : il change de but sans s'arrêter
+					if (bruit.brut - enquete.brut).Magnitude > R.ECART_NOUVEAU_BRUIT then
+						commencerEnquete(bruit.estime, bruit.brut, bruit.source)
+						return
+					end
+				elseif etat == "recherche" and dernierBruitSuivi.brut
+					and maintenant - dernierBruitSuivi.instant < R.DUREE_RECHERCHE_MAX
+					and (bruit.brut - dernierBruitSuivi.brut).Magnitude <= R.ECART_NOUVEAU_BRUIT
+					and (bruit.brut - terrain.auSol(racine.Position)).Magnitude <= R.DISTANCE_SUR_PLACE then
+					-- il fouille déjà cet endroit et il est encore tout près : le même bruit (le balai en refait
+					-- toutes les 1,2 s) ne le fait pas se remettre à écouter. Pas de va-et-vient, pas de nouvel
+					-- avertissement ; tant que le bruit dure, il garde sa recherche active.
+					dernierBruitSuivi.instant = maintenant
+					debutEtat = maintenant
+				else
+					commencerEcoute(bruit) -- patrouille, ou recherche ailleurs : il s'arrête pour écouter
+					return
+				end
 			end
 		end
 	end

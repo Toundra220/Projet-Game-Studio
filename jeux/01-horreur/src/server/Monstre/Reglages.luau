@@ -6,7 +6,7 @@
 	          Lu une seule fois au démarrage du serveur.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-25, écoute des bruits de nettoyage, AGENT_HAUTEUR 16, SEUIL_VITESSE_BRUIT 22 pour le sprint)
 ]]
 
 local DEFAUTS = {
@@ -27,12 +27,16 @@ local DEFAUTS = {
 	HAUTEUR_YEUX = 2.5,            -- si le modèle n'a pas de tête : yeux à 2,5 studs au dessus de la racine
 
 	-- Ouïe
-	SEUIL_VITESSE_BRUIT = 13,      -- au dessus de cette vitesse, les pas du joueur font du bruit
-	PORTEE_OUIE_PAS = 35,          -- distance à laquelle il entend ces pas
+	SEUIL_VITESSE_BRUIT = 22,      -- au dessus de cette vitesse, les pas du joueur font du bruit : la marche (16) est silencieuse, le sprint (32, Shared/Sprint/ReglagesSprint) est bruyant
+	PORTEE_OUIE_PAS = 35,          -- distance à laquelle il entend ces pas (donc : le sprint ; la marche n'en fait pas)
 	FACTEUR_ETAGE = 2,             -- la distance verticale compte double (le plancher étouffe le bruit)
 	IMPRECISION_OUIE = 0.12,       -- de loin il situe mal le bruit : erreur jusqu'à 12 % de la distance...
 	IMPRECISION_MAX = 6,           -- ... sans dépasser 6 studs
 	PORTEE_BRUIT_MAX = 200,        -- portée max acceptée pour MonstreBruit
+	DUREE_ECOUTE_PRES = 0.6,       -- il entend un bruit tout près : il s'arrête 0,6 s (tête tournée vers lui) avant d'aller voir...
+	DUREE_ECOUTE_LOIN = 1.6,       -- ... et 1,6 s si le bruit est au bout de sa portée : le temps pour le joueur de réagir
+	ECART_NOUVEAU_BRUIT = 4,       -- un bruit à plus de 4 studs du précédent est un autre endroit : il change de but
+	DISTANCE_SUR_PLACE = 12,       -- à moins de 12 studs d'un bruit qu'il fouille déjà, un bruit au même endroit ne le fait plus se remettre à écouter
 
 	-- Vitesses (joueur : 16)
 	VITESSE_PATROUILLE = 10,
@@ -69,8 +73,8 @@ local DEFAUTS = {
 	HAUTEUR_CONTACT = 8,           -- écart vertical max pour un contact
 
 	-- Chemin
-	AGENT_RAYON = 2,
-	AGENT_HAUTEUR = 12,
+	AGENT_RAYON = 2.5,             -- mains à ~1,9 stud du centre : marge pour que les griffes ne traversent pas les murs près des portes
+	AGENT_HAUTEUR = 16,            -- nouveau monstre de 15,6 studs ; les portes font 17,7 (chemins testés OK à 16)
 	DISTANCE_POINT = 3.5,          -- à cette distance d'un point du chemin, il vise le suivant
 	ECART_POINTS_ESCALIER = 5,     -- un point de guidage tous les 5 studs le long de l'escalier
 	DELAI_BLOCAGE = 2,             -- s'il n'avance pas de PROGRES_MIN en 2 s, il est bloqué
