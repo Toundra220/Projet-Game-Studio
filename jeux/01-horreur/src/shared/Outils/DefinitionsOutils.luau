@@ -5,7 +5,8 @@
 	          une entrée dans Definitions. Partagé entre client et serveur.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24 (modifié : 2026-11-25, bruit du balai, vitesseNettoyage, FacteurBruit, OUTIL_DE_DEPART)
+	Date    : 2026-11-24 (modifié : 2026-11-25, bruit du balai, vitesseNettoyage, FacteurBruit, OUTIL_DE_DEPART,
+	          prises du balai et de l'aspirateur)
 ]]
 
 local Types = require(script.Parent:WaitForChild("Types"))
@@ -56,8 +57,11 @@ local Definitions: { [string]: Types.DefinitionOutil } = {
 		-- tout nettoyage fait du bruit : le balai racle le sol, moins fort que l'aspirateur
 		-- (et moins fort que des pas de course, 35 studs : voir Monstre/Reglages)
 		bruit = table.freeze({ portee = 25, periode = 1.2 }),
-		-- le modèle a les poils vers +Y : demi-tour pour les poils en bas, main plus haut sur le manche
-		prise = CFrame.new(0, -0.4, 0) * CFrame.Angles(math.pi, 0, 0),
+		-- Le modèle a les poils vers +Y : le demi-tour met les poils côté +Z de la main (vers le bas
+		-- dans la pose de repos, bras levé à 92°). La main tient le manche à 0,9 stud au-dessus du
+		-- centre : au repos les poils frôlent le sol (0,1 stud, mesuré). Les poses de
+		-- FormesAnimation sont calculées pour CETTE prise : ne pas changer l'une sans l'autre.
+		prise = CFrame.new(0, -0.9, 0) * CFrame.Angles(math.pi, 0, 0),
 	},
 	Aspirateur = {
 		id = "Aspirateur",
@@ -73,6 +77,10 @@ local Definitions: { [string]: Types.DefinitionOutil } = {
 		vitesseNettoyage = 1.6, -- 4 s / 2,5 s : même rapport qu'avant entre les deux outils
 		porteeUtilisation = 7,
 		bruit = table.freeze({ portee = 45, periode = 1 }),
+		-- Le modèle a la tête (brosse, roues) vers -Y et la poignée vers +Y : sans rotation, la tête
+		-- est côté +Z de la main, comme les poils du balai, donc les mêmes poses marchent.
+		-- Main à 1 stud au-dessus du centre : au repos la tête frôle le sol (mesuré).
+		prise = CFrame.new(0, 1, 0),
 	},
 }
 

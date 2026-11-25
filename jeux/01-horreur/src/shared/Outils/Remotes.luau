@@ -8,6 +8,7 @@
 	            DemanderUtilisation client -> serveur ("debut", cible: Instance) ou ("arret")
 	            RetourOutil        serveur -> client  (code: string, idOutil: string?)
 	              codes : ramasse, achete, achat_propose, achat_annule, achat_indisponible,
+	                      achat_non_configure (game pass pas encore créé),
 	                      deja_possede, indisponible, trop_loin, pas_visible, mauvais_outil,
 	                      utilisation_fini, utilisation_arretee
 	Origine : ÉCRIT PAR CLAUDE

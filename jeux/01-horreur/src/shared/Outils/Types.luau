@@ -36,7 +36,8 @@ export type Paiement = {
 	nom: string,
 	-- le joueur possède déjà l'achat ? (peut attendre : appel Marketplace dans pcall, résultat mis en cache)
 	possede: (joueur: Player, definition: DefinitionOutil) -> boolean,
-	-- le serveur ouvre la fenêtre d'achat chez le joueur. false + code ("achat_indisponible") si impossible (ID à 0, erreur)
+	-- le serveur ouvre la fenêtre d'achat chez le joueur. false + code si impossible :
+	-- "achat_non_configure" (idGamePass = 0) ou "achat_indisponible" (erreur Roblox)
 	proposerAchat: (joueur: Player, definition: DefinitionOutil) -> (boolean, string?),
 	-- enregistre la fonction appelée quand un achat est confirmé côté serveur
 	surAchatConfirme: (rappel: RappelAchat) -> (),

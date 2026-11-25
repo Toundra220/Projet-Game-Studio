@@ -5,7 +5,7 @@
 	          Les textes avec « %s » reçoivent l'article de l'outil (« le balai »).
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-26, code achat_non_configure)
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,6 +19,7 @@ local MESSAGES: { [string]: string } = table.freeze({
 	achat_propose = "",
 	achat_annule = "Achat annulé.",
 	achat_indisponible = "Achat indisponible pour le moment.",
+	achat_non_configure = "Pas encore en vente : %s arrive bientôt !", -- game pass pas encore créé (idGamePass = 0)
 	deja_possede = "Tu as déjà %s.",
 	indisponible = "Cet objet n'est plus disponible.",
 	trop_loin = "Trop loin.",
