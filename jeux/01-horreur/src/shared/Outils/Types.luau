@@ -5,10 +5,11 @@
 	          stratégies, détecteur et affichage. Aucun code : uniquement des types.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-25, vitesseNettoyage)
 ]]
 
--- Bruit envoyé au monstre pendant l'utilisation d'un outil
+-- Bruit envoyé au monstre pendant l'utilisation d'un outil.
+-- portee : studs (multipliée par l'attribut FacteurBruit de la tache) ; periode : secondes entre deux bruits
 export type Bruit = { portee: number, periode: number }
 
 export type DefinitionOutil = {
@@ -21,9 +22,10 @@ export type DefinitionOutil = {
 	animation: string,           -- clé de forme client, ex. "Balayage"
 	verbeUtilisation: string,    -- "Balayer", "Aspirer"
 	tagCible: string,            -- "Nettoyable"
-	dureeUtilisation: number,    -- secondes pour nettoyer une cible entière
+	dureeUtilisation: number,    -- secondes pour nettoyer une cible qui n'a pas de durée propre (attribut DureeNettoyage)
+	vitesseNettoyage: number,    -- 1 = comme le balai ; 1,6 = 1,6 fois plus vite. Divise la DureeNettoyage de la cible
 	porteeUtilisation: number,   -- studs
-	bruit: Bruit?,               -- bruit envoyé au monstre pendant l'utilisation
+	bruit: Bruit?,               -- bruit envoyé au monstre pendant l'utilisation (nil = silencieux)
 	prise: CFrame?,              -- Tool.Grip : comment la main tient l'objet (nil = prise par défaut)
 }
 

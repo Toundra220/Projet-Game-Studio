@@ -5,7 +5,7 @@
 	          une entrée dans Definitions. Partagé entre client et serveur.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-25, bruit du balai, vitesseNettoyage, FacteurBruit)
 ]]
 
 local Types = require(script.Parent:WaitForChild("Types"))
@@ -23,6 +23,7 @@ local Reglages = {
 	ATTRIBUT_NETTOYE = "Nettoye",
 	ATTRIBUT_OUTIL_REQUIS = "OutilRequis",
 	ATTRIBUT_DUREE = "DureeNettoyage",
+	ATTRIBUT_FACTEUR_BRUIT = "FacteurBruit", -- posé par le serveur sur la tache : multiplie la portée du bruit de l'outil
 
 	-- Distances et angles
 	PORTEE_RAMASSAGE = 8,                -- studs
@@ -45,7 +46,11 @@ local Definitions: { [string]: Types.DefinitionOutil } = {
 		verbeUtilisation = "Balayer",
 		tagCible = "Nettoyable",
 		dureeUtilisation = 4,
+		vitesseNettoyage = 1,   -- référence : les durées des taches (ReglagesTaches) sont données pour le balai
 		porteeUtilisation = 7,
+		-- tout nettoyage fait du bruit : le balai racle le sol, moins fort que l'aspirateur
+		-- (et moins fort que des pas de course, 35 studs : voir Monstre/Reglages)
+		bruit = table.freeze({ portee = 25, periode = 1.2 }),
 		-- le modèle a les poils vers +Y : demi-tour pour les poils en bas, main plus haut sur le manche
 		prise = CFrame.new(0, -0.4, 0) * CFrame.Angles(math.pi, 0, 0),
 	},
@@ -60,6 +65,7 @@ local Definitions: { [string]: Types.DefinitionOutil } = {
 		verbeUtilisation = "Aspirer",
 		tagCible = "Nettoyable",
 		dureeUtilisation = 2.5,
+		vitesseNettoyage = 1.6, -- 4 s / 2,5 s : même rapport qu'avant entre les deux outils
 		porteeUtilisation = 7,
 		bruit = table.freeze({ portee = 45, periode = 1 }),
 	},

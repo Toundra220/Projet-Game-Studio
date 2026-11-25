@@ -5,12 +5,14 @@
 	          Signatures :
 	            NettoyageProgression:Fire(joueur: Player, cible: Instance, progression: number (0..1), idOutil: string)
 	            NettoyageTermine:Fire(joueur: Player, cible: Instance, idOutil: string)
-	            MonstreBruit:Fire(position: Vector3, portee: number)   -- déjà écouté par MonstreIA
+	            MonstreBruit:Fire(position: Vector3, portee: number, source: Player?)   -- écouté par MonstreIA
+	                (source : le joueur qui fait le bruit, facultatif ; sert à l'avertir quand le monstre vient)
 	          Le futur TaskManager écoutera NettoyageTermine (et NettoyageProgression pour une
 	          barre de progression), sans qu'on ait à modifier le code des outils.
+	          Taches/Taches.server écoute déjà NettoyageTermine (compteurs Total / Restantes).
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24
+	Date    : 2026-11-24 (modifié : 2026-11-25, 3e argument de MonstreBruit)
 ]]
 
 local ServerStorage = game:GetService("ServerStorage")
