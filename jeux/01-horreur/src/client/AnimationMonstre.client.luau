@@ -13,11 +13,13 @@
 	          - penche dans les virages, genoux plus hauts dans l'escalier
 	          Sons facultatifs : si le modèle contient des Sound nommés SonPas, SonDetection ou
 	          SonApproche (à ajouter avec nos propres sons), ils sont joués ici, en local.
+	          Yeux : attribut Yeux du modèle (texte) : "noirs" (orbites vides, comme le sprite),
+	          "rouges" (toujours rouges) ou "rouges_en_chasse" (rouges en alerte, poursuite, attaque).
 	          Le serveur (MonstreIA) indique l'allure (« Allure ») et l'état (« Etat »).
 	          Tout est visuel (Motor6D.Transform côté client) : rien ne change la collision.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-18 (postures, tête, coudes et sons : 2026-11-24)
+	Date    : 2026-11-18 (postures, tête, coudes et sons : 2026-11-24 ; nouveau modèle et yeux : 2026-11-25)
 ]]
 
 local RunService = game:GetService("RunService")
@@ -38,7 +40,9 @@ local MODES = {
 	course    = { freq = 9.0, amp = 0.78, knee = 1.2, arm = math.rad(75),  balance = 0.12, coude = 0.5,  lean = 0.2,   teteBas = -0.1,  inclineTete = 0,    bob = 0.16, souffle = 0,   tremble = 0,   tic = 0,   scan = 0 },
 	recherche = { freq = 0,   amp = 0,    knee = 0,   arm = math.rad(15),  balance = 0,    coude = 0.5,  lean = 0.15,  teteBas = 0.15,  inclineTete = 0.15, bob = 0,    souffle = 0.6, tremble = 0,   tic = 0.5, scan = 1 },
 	soupcon   = { freq = 0,   amp = 0,    knee = 0,   arm = math.rad(25),  balance = 0,    coude = 0.7,  lean = 0.22,  teteBas = 0,     inclineTete = 0.4,  bob = 0,    souffle = 0.2, tremble = 0.2, tic = 1,   scan = 0 },
-	alerte    = { freq = 0,   amp = 0,    knee = 0,   arm = math.rad(140), balance = 0,    coude = 0.2,  lean = -0.25, teteBas = -0.2,  inclineTete = 0,    bob = 0,    souffle = 0,   tremble = 1,   tic = 0.6, scan = 0 },
+	-- alerte : bras levés à 115° (et non 140°) : avec ses bras très longs, les griffes passaient
+	-- au-dessus des linteaux de porte (17,7 studs au RdC)
+	alerte    = { freq = 0,   amp = 0,    knee = 0,   arm = math.rad(115), balance = 0,    coude = 0.2,  lean = -0.25, teteBas = -0.2,  inclineTete = 0,    bob = 0,    souffle = 0,   tremble = 1,   tic = 0.6, scan = 0 },
 	attaque   = { freq = 0,   amp = 0,    knee = 0.3, arm = math.rad(110), balance = 0,    coude = 0.05, lean = 0.5,   teteBas = 0.25,  inclineTete = 0,    bob = 0,    souffle = 0,   tremble = 0.4, tic = 0,   scan = 0 },
 }
 
@@ -52,6 +56,9 @@ local VITESSE_REFERENCE = { marche = 10, enquete = 14, prudent = 8, course = 17 
 local SEUIL_ARRET = 1.0      -- en dessous : il est immobile
 local SEUIL_DEPART = 2.5     -- au dessus : il se remet en mouvement (évite le clignotement)
 
+local BRAS_ESCALIER = 0.5     -- dans l'escalier : bras levés vers l'avant (radians)...
+local COUDE_ESCALIER = 1.1     -- ...et coudes pliés, pour que les griffes ne traversent pas les marches
+local DISTANCE_ANTICIPATION_MARCHE = 4 -- studs devant lui où l'on regarde si le sol monte
 local INCLINAISON_VIRAGE = 0.06 -- combien il penche dans les virages
 local INCLINAISON_MAX = 0.25
 local SENS_INCLINAISON = 1      -- mettre -1 s'il penche vers l'extérieur du virage au lieu de l'intérieur
@@ -69,6 +76,14 @@ local VARIATION_PAS = 0.08         -- hauteur des pas : +/- 8 % (évite l'effet 
 
 local monstre = workspace:WaitForChild("MonstreRodin")
 local racine = monstre:WaitForChild("HumanoidRootPart")
+local humanoidMonstre = monstre:FindFirstChildOfClass("Humanoid")
+-- distance racine -> sol quand il est debout (HipHeight + demi-hauteur de la racine)
+local hauteurRacine = (humanoidMonstre and humanoidMonstre.HipHeight or 6) + racine.Size.Y / 2
+-- rayons vers le sol (anticipation des marches) : on ignore le monstre et ce qu'on traverse
+local paramsSol = RaycastParams.new()
+paramsSol.FilterType = Enum.RaycastFilterType.Exclude
+paramsSol.FilterDescendantsInstances = { monstre }
+paramsSol.RespectCanCollide = true
 
 local function moteur(nom)
 	return monstre:WaitForChild(nom):WaitForChild(nom)
@@ -136,11 +151,36 @@ monstre:GetAttributeChangedSignal("Etat"):Connect(function()
 	end
 end)
 
+-- Yeux : orbites noires (sprite) ou rouges (fiche Monstre du coffre), au choix de Romain
+-- via l'attribut Yeux du modèle. Purement visuel et local.
+local ROUGE_YEUX = Color3.fromRGB(200, 20, 20)
+local ETATS_CHASSE = { alerte = true, poursuite = true, attaque = true }
+local orbites = {}
+for _, nom in { "OrbiteG", "OrbiteD" } do
+	local o = monstre:WaitForChild(nom, 5)
+	if o and o:IsA("BasePart") then
+		table.insert(orbites, { partie = o, couleur = o.Color, matiere = o.Material })
+	end
+end
+local function mettreAJourYeux()
+	local choix = monstre:GetAttribute("Yeux")
+	local rouges = choix == "rouges"
+		or (choix == "rouges_en_chasse" and ETATS_CHASSE[monstre:GetAttribute("Etat")] == true)
+	for _, o in orbites do
+		o.partie.Color = rouges and ROUGE_YEUX or o.couleur
+		o.partie.Material = rouges and Enum.Material.Neon or o.matiere
+	end
+end
+mettreAJourYeux()
+monstre:GetAttributeChangedSignal("Yeux"):Connect(mettreAJourYeux)
+monstre:GetAttributeChangedSignal("Etat"):Connect(mettreAJourYeux)
+
 local DEUX_PI = 2 * math.pi
 local p = table.clone(MODES.repos)
 local phase = 0
 local vitesseLissee = 0
 local montee = 0         -- 0 = sol plat, 1 = escalier raide
+local brasEscalier = 0   -- 0 = bras pendants, 1 = bras repliés (escalier)
 local inclinaison = 0
 local enMouvement = false
 local lacetPrecedent = nil
@@ -203,6 +243,20 @@ RunService.RenderStepped:Connect(function(dt)
 	montee += (penteVoulue - montee) * lissage(dt, 5)
 	local amp = p.amp * (1 + 0.2 * montee)
 	local knee = p.knee * (1 + 0.6 * montee)
+	-- ses griffes pendent plus bas que ses genoux : dans l'escalier il replie les bras
+	-- vers l'avant, sinon elles traversent les marches (constaté en Play le 2026-11-25).
+	-- Un rayon vers le sol, devant lui, anticipe la première marche.
+	local brasVoulu = math.clamp(montee * 2, 0, 1)
+	if enMouvement then
+		local regard = racine.CFrame.LookVector
+		local devant = racine.Position + Vector3.new(regard.X, 0, regard.Z) * DISTANCE_ANTICIPATION_MARCHE
+		local sol = workspace:Raycast(devant, Vector3.new(0, -(hauteurRacine + 4), 0), paramsSol)
+		if sol then
+			local solSousLui = racine.Position.Y - hauteurRacine
+			brasVoulu = math.max(brasVoulu, math.clamp((sol.Position.Y - solSousLui - 0.3) / 1.2, 0, 1))
+		end
+	end
+	brasEscalier += (brasVoulu - brasEscalier) * lissage(dt, 10)
 
 	-- virages : il penche vers l'intérieur, d'autant plus qu'il va vite
 	local regardCorps = racine.CFrame.LookVector
@@ -239,12 +293,14 @@ RunService.RenderStepped:Connect(function(dt)
 	-- les épaules compensent la penche du tronc : à 0 les bras pendent à la verticale.
 	-- Chaque bras se balance à l'opposé de la jambe du même côté.
 	local penche = p.lean + souffle + tremble
-	epauleG.Transform = RX(-penche - p.arm - s * p.balance + tremble * 2)
-	epauleD.Transform = RX(-penche - p.arm + s * p.balance - tremble * 2)
+	local brasLeve = BRAS_ESCALIER * brasEscalier
+	epauleG.Transform = RX(-penche - p.arm - brasLeve - s * p.balance + tremble * 2)
+	epauleD.Transform = RX(-penche - p.arm - brasLeve + s * p.balance - tremble * 2)
 	if coudeG and coudeD then
 		-- le coude se plie un peu plus quand le bras part vers l'avant
-		coudeG.Transform = RX(-p.coude - math.max(0, s) * p.balance * 0.8)
-		coudeD.Transform = RX(-p.coude - math.max(0, -s) * p.balance * 0.8)
+		local coudeEscalier = COUDE_ESCALIER * brasEscalier
+		coudeG.Transform = RX(-p.coude - coudeEscalier - math.max(0, s) * p.balance * 0.8)
+		coudeD.Transform = RX(-p.coude - coudeEscalier - math.max(0, -s) * p.balance * 0.8)
 	end
 
 	-- tête : suit le point que le serveur lui fait regarder, sinon regarde devant
