@@ -6,12 +6,14 @@
 	          Lu une seule fois au démarrage du serveur.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-24 (modifié : 2026-11-25, écoute des bruits de nettoyage, AGENT_HAUTEUR 16, SEUIL_VITESSE_BRUIT 22 pour le sprint)
+	Date    : 2026-11-24 (modifié : 2026-11-25, écoute des bruits de nettoyage, AGENT_HAUTEUR 16, SEUIL_VITESSE_BRUIT 22 pour le sprint, apparition au balai)
 ]]
 
 local DEFAUTS = {
 	-- Départ
-	DELAI_DEPART = 7,              -- secondes après l'apparition du premier joueur (conception : 7 s)
+	DELAI_DEPART = 7,              -- secondes après son apparition dans la chambre (conception : 7 s)
+	OUTIL_APPARITION = "Balai",    -- il n'apparaît que quand un joueur ramasse cet outil (id dans DefinitionsOutils)
+	PROFONDEUR_CACHE = 250,        -- avant son apparition : rangé 250 studs sous sa chambre, ancré (reste sous FallenPartsDestroyHeight = -500)
 
 	-- Vue
 	PORTEE_VUE = 50,               -- distance max à laquelle il remarque un joueur droit devant (studs)

@@ -19,7 +19,7 @@
 	          Tout est visuel (Motor6D.Transform côté client) : rien ne change la collision.
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-18 (postures, tête, coudes et sons : 2026-11-24 ; nouveau modèle et yeux : 2026-11-25)
+	Date    : 2026-11-18 (postures, tête, coudes et sons : 2026-11-24 ; nouveau modèle et yeux : 2026-11-25 ; attribut Present : 2026-11-25)
 ]]
 
 local RunService = game:GetService("RunService")
@@ -190,6 +190,10 @@ local volumeApproche = 0
 
 RunService.RenderStepped:Connect(function(dt)
 	if dt <= 0 then
+		return
+	end
+	-- rangé sous sa chambre tant que personne n'a ramassé le balai : rien à animer
+	if monstre:GetAttribute("Present") == false then
 		return
 	end
 	local camera = workspace.CurrentCamera

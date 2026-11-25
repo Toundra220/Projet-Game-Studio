@@ -1,6 +1,8 @@
 --[[
 	Rôle    : IA du monstre du jeu 1 (horreur), machine à états côté serveur.
-	          attente   : immobile, puis part 7 s après l'apparition du premier joueur
+	          attente   : absent (rangé sous sa chambre, ancré, attribut Present = false) tant qu'aucun joueur n'a ramassé
+	                      le balai ; à ce moment le serveur le remet dans la chambre 1 (Present = true), puis il part
+	                      DELAI_DEPART secondes plus tard
 	          patrouille: va de point en point (rez-de-chaussée et étage), évite les derniers visités
 	          soupcon   : il a entrevu quelqu'un : il s'arrête, fixe l'endroit, la tête penchée ;
 	                      si le joueur reste visible -> alerte, s'il se cache -> il va voir (enquete)
@@ -21,11 +23,11 @@
 	          Écoute MonstreBruit (BindableEvent, ServerStorage) : MonstreBruit:Fire(position, portee, joueur?).
 	          Tout nettoyage en émet un (Outils/Utilisations/Nettoyage) : le monstre vient voir les taches
 	          qu'on nettoie, avec l'imprécision de Perception.entendre. Le client ne peut pas en envoyer.
-	          Attributs lus par le client : Etat, Allure, CibleId (UserId poursuivi, 0 sinon),
+	          Attributs lus par le client : Present (false tant qu'il est rangé), Etat, Allure, CibleId (UserId poursuivi, 0 sinon),
 	          Regard (Vector3 que la tête fixe, absent sinon).
 	Origine : ÉCRIT PAR CLAUDE
 	Auteur  : Romain Lesur
-	Date    : 2026-11-18 (refonte en modules : 2026-11-24 ; écoute et bruits de nettoyage : 2026-11-25)
+	Date    : 2026-11-18 (refonte en modules : 2026-11-24 ; écoute et bruits de nettoyage, apparition au balai : 2026-11-25)
 ]]
 
 local Players = game:GetService("Players")
@@ -49,6 +51,17 @@ assert(humanoid and racine, "MonstreRodin doit avoir un Humanoid et un HumanoidR
 monstre.PrimaryPart = racine
 
 local R = Reglages.charger(monstre)
+
+-- Absent au début : rangé sous sa chambre et ancré (donc immobile, hors de vue, sans collision avec les joueurs).
+-- Le modèle reste dans Workspace : AnimationMonstre et les autres scripts le retrouvent toujours, avec ses Motor6D.
+local pivotChambre = monstre:GetPivot()
+local ancrageOrigine = racine.Anchored
+local apparu = false
+local debutApparition = 0
+racine.Anchored = true
+racine.AssemblyLinearVelocity = Vector3.zero
+monstre:PivotTo(pivotChambre - Vector3.new(0, R.PROFONDEUR_CACHE, 0))
+monstre:SetAttribute("Present", false)
 
 local tete = monstre:FindFirstChild("Tete") or monstre:FindFirstChild("Crane") or monstre:FindFirstChild("Head")
 if tete and not tete:IsA("BasePart") then
@@ -131,6 +144,38 @@ local function estFini(x)
 end
 
 local etat = nil -- défini par changerEtat
+
+-- Apparition : le serveur le remet dans sa chambre. Le délai de départ compte à partir d'ici.
+local function apparaitre()
+	if apparu then
+		return
+	end
+	apparu = true
+	monstre:PivotTo(pivotChambre)
+	racine.AssemblyLinearVelocity = Vector3.zero
+	racine.Anchored = ancrageOrigine
+	pcall(function()
+		racine:SetNetworkOwner(nil)
+	end)
+	debutApparition = os.clock()
+	monstre:SetAttribute("Present", true)
+	if R.DEBUG then
+		print(("[Monstre] %.2f  apparition dans la chambre"):format(debutApparition))
+	end
+end
+
+-- OutilDonne (ServerStorage, tiré par ServiceRamassage) : seul le serveur le déclenche, jamais le client
+local evenementOutil = ServerStorage:FindFirstChild("OutilDonne")
+if not evenementOutil then
+	evenementOutil = Instance.new("BindableEvent")
+	evenementOutil.Name = "OutilDonne"
+	evenementOutil.Parent = ServerStorage
+end
+evenementOutil.Event:Connect(function(joueur, idOutil)
+	if typeof(joueur) == "Instance" and joueur:IsA("Player") and idOutil == R.OUTIL_APPARITION then
+		apparaitre()
+	end
+end)
 
 evenementBruit.Event:Connect(function(position, portee, source)
 	if typeof(position) ~= "Vector3" or not estFini(portee)
@@ -243,7 +288,6 @@ local debutEtat = 0
 local regard = nil            -- point que la tête fixe (attribut Regard)
 
 -- données des états
-local premierJoueurVu = nil   -- attente : moment où un joueur est apparu
 local butPatrouille, cheminPret = nil, false
 local visites = {}            -- derniers points de patrouille visités
 local loinDe = nil            -- après une prise : patrouiller loin de cette position
@@ -376,19 +420,11 @@ end
 local MAJ = {}
 
 function MAJ.attente(maintenant)
-	-- le compte à rebours démarre quand un joueur est vraiment dans le manoir
-	if not premierJoueurVu then
-		for _, joueur in Players:GetPlayers() do
-			local perso = joueur.Character
-			local h = perso and perso:FindFirstChildOfClass("Humanoid")
-			if h and h.Health > 0 and perso:FindFirstChild("HumanoidRootPart") then
-				premierJoueurVu = maintenant
-				break
-			end
-		end
+	-- absent tant que personne n'a ramassé le balai ; le compte à rebours part de son apparition
+	if not apparu then
 		return
 	end
-	if maintenant - premierJoueurVu >= R.DELAI_DEPART then
+	if maintenant - debutApparition >= R.DELAI_DEPART then
 		changerEtat("patrouille")
 	end
 end
